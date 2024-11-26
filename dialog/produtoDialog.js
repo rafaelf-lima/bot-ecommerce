@@ -15,6 +15,7 @@ const { Channels } = require('botbuilder-core');
 const { ProdutoProfile } = require('../produtoProfile');
 const {Produto} = require("../produto");
 const { Extrato } = require('../extrato');
+const { Categoria } = require('../categoria');
 const { Pedido } = require('../pedido');
 
 const NAME_PROMPT = 'NAME_PROMPT';
@@ -35,6 +36,7 @@ class ProductDialog extends ComponentDialog {
         this.addDialog(new WaterfallDialog(WATERFALL_DIALOG, [
             this.menuStep.bind(this),
             this.productNameStep.bind(this),
+            this.productFilterStep.bind(this), // Nova etapa
             this.confirmStep.bind(this)
         ]));
 
@@ -66,8 +68,8 @@ class ProductDialog extends ComponentDialog {
 
     async productNameStep(step) {
         step.values.choice = step.result.value;
-
-        switch(step.values.choice) {
+    
+        switch (step.values.choice) {
             case "Consultar Pedidos": {
                 return await step.prompt(NAME_PROMPT, 'Digite o número da transação'); 
             }
@@ -75,8 +77,32 @@ class ProductDialog extends ComponentDialog {
                 return await step.prompt(NAME_PROMPT, 'Digite o ID do cartão');        
             }
             case "Consultar Produtos": {
-                return await step.prompt(NAME_PROMPT, 'Digite o nome do produto');        
+                return await step.prompt(CHOICE_PROMPT, {
+                    prompt: 'Como você gostaria de consultar os produtos?',
+                    choices: ChoiceFactory.toChoices(['Por categoria', 'Por nome'])
+                });
             }
+            default: {
+                await step.context.sendActivity('Opção inválida. Tente novamente.');
+                return await this.menuStep(step); // Go back to the menu
+            }
+        }
+    }
+    
+    async productFilterStep(step) {
+        // Check if the user's choice is "Consultar Produtos"
+        if (step.values.choice !== "Consultar Produtos") {
+            // Directly call confirmStep if the choice is not valid
+            return await this.confirmStep(step);
+        }
+    
+        // Proceed with filtering logic if the choice is valid
+        step.values.filterType = step.result.value;
+    
+        if (step.values.filterType === 'Por categoria') {
+            return await step.prompt(NAME_PROMPT, 'Digite o nome da categoria:');
+        } else {
+            return await step.prompt(NAME_PROMPT, 'Digite o nome do produto:');
         }
     }
 
@@ -103,15 +129,34 @@ class ProductDialog extends ComponentDialog {
                 break;
             }
             case "Consultar Produtos": {
-                let productName = step.values.id;
-                let produto = new Produto();
-                let response = await produto.getProduto(productName);
-                let card = produto.createProductCard(response.data[0]);
-                await step.context.sendActivity({ attachments: [card] });
-                break
+                const categoria = new Categoria();
+                const filterType = step.values.filterType; // Get the filter type
+                const query = step.values.id; // Use the id as the query (it should be the category or product name)
+    
+                if (filterType === 'Por categoria') {
+                    // Chama o método para buscar produtos por categoria
+                    const response = await categoria.getCategoria(query); // Use query here
+    
+                    if (response.data && response.data.length > 0) {
+                        const cards = categoria.createCategoryCards(response.data); // Cria cartões para os produtos
+                        await step.context.sendActivity({ attachments: cards });
+                    } else {
+                        await step.context.sendActivity('Nenhum produto encontrado para esta categoria.');
+                    }
+                } else {
+                    const produto = new Produto();
+                    const response = await produto.getProduto(query); // Use query here
+    
+                    if (response.data && response.data.length > 0) {
+                        const card = produto.createProductCard(response.data[0]); // Cria o cartão para o primeiro produto encontrado
+                        await step.context.sendActivity({ attachments: [card] });
+                    } else {
+                        await step.context.sendActivity('Nenhum produto encontrado com este nome.');
+                    }
+                }
+                break;
             }
         }
-
         // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
         return await step.endDialog();
     }
