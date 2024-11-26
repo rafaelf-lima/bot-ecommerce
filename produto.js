@@ -18,7 +18,7 @@ class Produto {
             [{ url: response.urlFoto }],
             [],
             {
-                subtitle: `Preço do produto: ${response.preco}`,
+                subtitle: `Preço do produto: R$ ${response.preco}`,
                 text: response.descricaoProduto
             }
         );

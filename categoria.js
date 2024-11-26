@@ -30,7 +30,7 @@ class Categoria {
                 [{ url: produto.urlFoto }],
                 [],
                 {
-                    subtitle: `Preço: ${produto.preco}`,
+                    subtitle: `Preço: R$ ${produto.preco}`,
                     text: produto.descricaoProduto
                 }
             )

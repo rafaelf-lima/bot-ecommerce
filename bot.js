@@ -23,6 +23,18 @@ class DialogBot extends ActivityHandler {
 
             await next();
         });
+
+        this.onMembersAdded(async (context, next) => {
+            const membersAdded = context.activity.membersAdded;
+            for (let member of membersAdded) {
+                if (member.id !== context.activity.recipient.id) {
+                    await context.sendActivity('Olá! Seja bem-vindo ao bot de e-Commerce da AP2!');
+                }
+            }
+            await next();
+        });
+
+
     }
 
     /**

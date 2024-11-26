@@ -84,19 +84,19 @@ class ProductDialog extends ComponentDialog {
             }
             default: {
                 await step.context.sendActivity('Opção inválida. Tente novamente.');
-                return await this.menuStep(step); // Go back to the menu
+                return await this.menuStep(step); 
             }
         }
     }
     
     async productFilterStep(step) {
-        // Check if the user's choice is "Consultar Produtos"
+        
         if (step.values.choice !== "Consultar Produtos") {
-            // Directly call confirmStep if the choice is not valid
+        
             return await this.confirmStep(step);
         }
     
-        // Proceed with filtering logic if the choice is valid
+        
         step.values.filterType = step.result.value;
     
         if (step.values.filterType === 'Por categoria') {
@@ -130,25 +130,25 @@ class ProductDialog extends ComponentDialog {
             }
             case "Consultar Produtos": {
                 const categoria = new Categoria();
-                const filterType = step.values.filterType; // Get the filter type
-                const query = step.values.id; // Use the id as the query (it should be the category or product name)
+                const filterType = step.values.filterType; 
+                const query = step.values.id; 
     
                 if (filterType === 'Por categoria') {
-                    // Chama o método para buscar produtos por categoria
-                    const response = await categoria.getCategoria(query); // Use query here
+                    
+                    const response = await categoria.getCategoria(query); 
     
                     if (response.data && response.data.length > 0) {
-                        const cards = categoria.createCategoryCards(response.data); // Cria cartões para os produtos
+                        const cards = categoria.createCategoryCards(response.data); 
                         await step.context.sendActivity({ attachments: cards });
                     } else {
                         await step.context.sendActivity('Nenhum produto encontrado para esta categoria.');
                     }
                 } else {
                     const produto = new Produto();
-                    const response = await produto.getProduto(query); // Use query here
+                    const response = await produto.getProduto(query); 
     
                     if (response.data && response.data.length > 0) {
-                        const card = produto.createProductCard(response.data[0]); // Cria o cartão para o primeiro produto encontrado
+                        const card = produto.createProductCard(response.data[0]); 
                         await step.context.sendActivity({ attachments: [card] });
                     } else {
                         await step.context.sendActivity('Nenhum produto encontrado com este nome.');
